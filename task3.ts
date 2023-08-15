@@ -1,6 +1,6 @@
 import * as crypto from 'crypto';
 import {sha256} from 'js-sha256';
-
+var AsciiTable = require('ascii-table')
 
 class Rules {
     getRulesTable(moveAmount) {
@@ -30,6 +30,24 @@ class Rules {
         }
         return array;
     }
+
+    printTable(ruleTable, moveAmount, moveArray){
+
+        let heading = [' v PC\User >'];
+        heading = heading.concat(moveArray);
+        let rows = [];
+        for(let i = 0; i < moveAmount; i++){
+            rows[i] = [moveArray[i]].concat(ruleTable[i])
+        }
+        var table = AsciiTable.factory('Rules')
+        var table = AsciiTable.factory({
+            title: 'Title'
+          , heading: [...heading]
+          , rows: rows
+          })
+
+          console.log(table.toString())
+    }
 }
 
 class Encrypt{
@@ -44,7 +62,7 @@ class Encrypt{
 }
 
 class Game{
-    public makeMove(){
+    public makeMove(moveAmount){
         return crypto.randomInt(moveAmount);
     }
 
@@ -52,20 +70,25 @@ class Game{
         return rulesTable[pcMove][userMove];
     }
 }
-let moveArray = process.argv.splice(2, process.argv.length - 1);
-if (moveArray.length < 3) {
-    console.log('argument amount less than 3');
-}
-if (!(moveArray.length % 2)) {
-    console.log('amount of moves should be uneven');
-}
 
-let moveAmount = moveArray.length;
+let moveArray = process.argv.splice(2, process.argv.length - 1);
+let dups = moveArray.filter((item, index) => moveArray.indexOf(item) !== index);
+if (moveArray.length < 3) {
+    console.log('Argument amount less than 3. Example: rock paper scissors');
+}
+else if (!(moveArray.length % 2)) {
+    console.log('Amount of moves should be uneven. Example: rock paper scissors');
+}
+else if(dups.length){
+    console.log('Theres duplicated moves');
+}
+else{
+    let moveAmount = moveArray.length;
 let rules = new Rules;
 let ruleTable = rules.getRulesTable(moveAmount);
 
 let game = new Game;
-let pcMoveNum = game.makeMove();
+let pcMoveNum = game.makeMove(moveAmount);
 let pcMoveStr = moveArray[pcMoveNum];
 let encrypt = new Encrypt;
 let key = encrypt.getKey().toString();
@@ -84,7 +107,8 @@ const rl = readline.createInterface({
 });
 rl.question("Enter your move: ", (answer) => {
     if(answer === '?'){
-        console.table(ruleTable);
+        rules.printTable(ruleTable, moveAmount, moveArray);
+        // console.table(ruleTable);
     }
     if(answer && +answer <= moveAmount){
         console.log(`Your move: ${moveArray[+answer - 1]}`);
@@ -92,11 +116,12 @@ rl.question("Enter your move: ", (answer) => {
         console.log(`You ${game.calcWinner(+answer - 1, pcMoveNum, ruleTable)}`);
         console.log(`HMAC key: ${key}`);
     }
-    else{
+    else if(!answer || answer != '?'){
         console.log('incorrect input')
     }
     rl.close();
 });
+}
 
 
 
